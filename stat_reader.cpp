@@ -50,7 +50,8 @@ namespace stat_reader
 			os << "Bus " << route_info.name << ": " <<
 				route_info.stop_amount << " stops on route, " <<
 				route_info.unique_stop_amount << " unique stops, " <<
-				std::setprecision(6) << route_info.length << " route length\n";
+				std::setprecision(6) << route_info.length << " route length, " <<
+				route_info.curvature << " curvature\n";
 		}
 	}
 

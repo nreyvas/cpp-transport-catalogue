@@ -5,6 +5,8 @@
 
 namespace stat_reader
 {
+	using namespace transport_catalogue;
+
 	enum class INQUIRY_TYPE
 	{
 		ROUTE,

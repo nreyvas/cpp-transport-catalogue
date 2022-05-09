@@ -9,79 +9,104 @@ namespace input_reader
 		int inquire_amount;
 		is >> inquire_amount;
 		is.ignore(32767, '\n');
-		std::vector<Inquiry> inquiries(inquire_amount);
+		std::vector<Inquiry> inquiries;
+		inquiries.reserve(inquire_amount);
+
 		for (int i = 0; i < inquire_amount; ++i)
 		{
 			std::string line;
 			std::getline(is, line);
-			inquiries[i] = ProcessLine(line);
+			Inquiry inq;
+			inq.type = ExtractInquiryType(line);
+			inq.name = ExtractInquiryName(line);
+			if (inq.type == INQUIRY_TYPE::NEW_DISTANCES)
+			{
+				inq.type = INQUIRY_TYPE::NEW_STOP;
+				Inquiry dist_inq;
+				dist_inq.name = inq.name;
+				dist_inq.type = INQUIRY_TYPE::NEW_DISTANCES;
+				SplitCoordinatesAndDistances(line, inq.text, dist_inq.text);
+				inquiries.push_back(dist_inq);
+			}
+			else
+			{
+				inq.text = std::move(line);
+			}
+			inquiries.push_back(inq);
 		}
+
 		std::sort(inquiries.begin(), inquiries.end(), [](const Inquiry& lhs, const Inquiry& rhs)
 			{ return lhs.type < rhs.type; });
 
 		ProcessInquires(inquiries, catalogue);
 	}
 
-	Inquiry ProcessLine(std::string line)
-	{
-		Inquiry inquiry;
-
-		inquiry.type = (line[0] == 'S') ? INQUIRY_TYPE::NEW_STOP : INQUIRY_TYPE::NEW_ROUTE;
-		int inquiry_start = line.find(' ') + 1;
-		inquiry.text = std::move(line.erase(0, inquiry_start));
-
-		return inquiry;
-	}
-
 	void ProcessInquires(std::vector<Inquiry> inquiries, TransportCatalogue& catalogue)
 	{
 		for (Inquiry& inquiry : inquiries)
 		{
+			//std::cerr << inquiry.name << '\n';
 			if (inquiry.type == INQUIRY_TYPE::NEW_STOP)
 			{
-				AddStop(std::move(inquiry.text), catalogue);
+				AddStop(inquiry, catalogue);
+			}
+			else if (inquiry.type == INQUIRY_TYPE::NEW_DISTANCES)
+			{
+				AddDistances(inquiry, catalogue);
 			}
 			else
 			{
-				//std::cerr << "adding route: "s << inquiry.text << '\n';
-				AddRoute(std::move(inquiry.text), catalogue);
+				AddRoute(inquiry, catalogue);
 			}
 		}
 	}
 
-	void AddStop(std::string text, TransportCatalogue& catalogue)
+	void AddStop(Inquiry& inq, TransportCatalogue& catalogue)
 	{
-		size_t colon_pos = text.find(':');
-		std::string name = text.substr(0, colon_pos);
-		text.erase(0, colon_pos + 2);
-		std::vector<std::string> words = SplitIntoWords(std::move(text));
-
-		words[words.size() - 2].pop_back(); // remove comma
-		std::istringstream iss{ std::move(words[words.size() - 2])};
+		size_t comma_pos = inq.text.find(',');
+		inq.text.erase(comma_pos, 1);
+		std::istringstream iss{ std::move(inq.text) };
 		Coordinates coordinates;
 		iss >> coordinates.lat;
-		iss.clear();
-		iss.str(std::move(words[words.size() - 1]));
 		iss >> coordinates.lng;
-
-		catalogue.AddStop(std::move(name), coordinates);
+		catalogue.AddStop(std::move(inq.name), coordinates);
 	}
 
-	void AddRoute(std::string text, TransportCatalogue& catalogue)
+	void AddDistances(Inquiry& inq, TransportCatalogue& catalogue)
 	{
-		size_t colon_pos = text.find(':');
-		std::string name = text.substr(0, colon_pos);
-		text.erase(0, colon_pos + 2);
+		while (true)
+		{
+			size_t m_pos = inq.text.find('m');
+			std::string distance_string = inq.text.substr(0, m_pos);
+			std::istringstream iss{ std::move(distance_string) };
+			int distance;
+			iss >> distance;
+			inq.text.erase(0, m_pos + 5); // removes "XXXXm to " from the start
+			size_t comma_pos = inq.text.find(',');
+			std::string stop_to_name = inq.text.substr(0, comma_pos);
+			catalogue.AddDistance(inq.name, std::move(stop_to_name), distance);
+			if (comma_pos == inq.text.npos)
+			{
+				break;
+			}
+			else
+			{
+				inq.text.erase(0, comma_pos + 2); // removes name + ", " from the start
+			}
+		}
+	}
 
+	void AddRoute(Inquiry& inq, TransportCatalogue& catalogue)
+	{
 		bool IsCircular = true;	// checking if the route is circular
-		if (text.find('>') == text.npos)
+		if (inq.text.find('>') == inq.text.npos)
 		{
 			IsCircular = false;
 		}
 
-		std::vector<std::string> stop_names = SplitIntoStopNames(std::move(text));
+		std::vector<std::string> stop_names = SplitIntoStopNames(std::move(inq.text));
 
-		catalogue.AddRoute(name, stop_names, IsCircular);
+		catalogue.AddRoute(std::move(inq.name), stop_names, IsCircular);
 	}
 
 	std::vector<std::string> SplitIntoWords(std::string text)
@@ -127,6 +152,45 @@ namespace input_reader
 		{
 			text.erase(word_end + 1);
 		}
+	}
+
+	// returns inquiry type and erases the type word from text
+	INQUIRY_TYPE ExtractInquiryType(std::string& text)
+	{
+		size_t space_position = text.find(' ');
+		std::string inq_type = text.substr(0, space_position);
+		text.erase(0, space_position + 1);
+		if (inq_type == "Bus")
+		{
+			return INQUIRY_TYPE::NEW_ROUTE;
+		}
+		if (text.find("m to ") != text.npos)
+		{
+			return INQUIRY_TYPE::NEW_DISTANCES;
+		}
+		return INQUIRY_TYPE::NEW_STOP;
+	}
+
+
+	// should be used after ExtractInquiryType, return name of bus/route and erases it from text
+	std::string ExtractInquiryName(std::string& text)
+	{
+		size_t colon_pos = text.find(':');
+		std::string name = text.substr(0, colon_pos);
+		text.erase(0, colon_pos + 2);
+		return name;
+	}
+
+	// Splits text into a string with coordinates and a string with distances
+	// ExtractInquiryType and ExtractInquiryName should be used before
+	void SplitCoordinatesAndDistances(std::string& text,
+		std::string& stop_inquiry_text, std::string& distances_inquiry_text)
+	{
+		size_t first_comma_pos = text.find(',');
+		size_t second_comma_pos = text.find(',', first_comma_pos + 1);
+		stop_inquiry_text = text.substr(0, second_comma_pos);
+		text.erase(0, second_comma_pos + 2);
+		distances_inquiry_text = std::move(text);
 	}
 }
 
