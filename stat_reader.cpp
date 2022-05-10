@@ -68,9 +68,9 @@ namespace stat_reader
 		else
 		{
 			os << "Stop " << stop_info.name << ": buses";
-			for (const std::string_view& route_name : stop_info.routes)
+			for (const Route* route_ptr : stop_info.routes)
 			{
-				os << " " << route_name;
+				os << " " << route_ptr->name;
 			}
 			os << '\n';
 		}

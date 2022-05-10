@@ -140,6 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="geo.cpp" />
     <ClCompile Include="input_reader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stat_reader.cpp" />

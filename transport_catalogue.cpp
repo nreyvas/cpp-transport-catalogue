@@ -3,6 +3,11 @@
 
 namespace transport_catalogue
 {
+	size_t StopPairHash::operator() (const std::pair<const Stop*, const Stop*> p) const
+	{
+		return hasher_(p.first->name) * 37 + hasher_(p.second->name);
+	}
+
 	void TransportCatalogue::AddRoute(std::string name, std::vector<std::string> stop_names, bool IsCircular)
 	{
 		if (routename_to_route_.count(name)) return;
@@ -75,14 +80,12 @@ namespace transport_catalogue
 			return StopInfo{ false, name, {} };
 		}
 		StopInfo result{ true, name, {} };
+
 		if (routes_at_stop_.count(name) != 0)
 		{
-			std::set<const Route*> list_of_routes = routes_at_stop_.at(name);
-			for (const Route* route_ptr : list_of_routes)
-			{
-				result.routes.insert(route_ptr->name);
-			}
+			result.routes = routes_at_stop_.at(name);
 		}
+
 		return result;
 	}
 

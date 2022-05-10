@@ -11,7 +11,7 @@ namespace input_reader
 {
 	using namespace transport_catalogue;
 
-	enum class INQUIRY_TYPE
+	enum class InputRequestType
 	{
 		NEW_STOP,
 		NEW_DISTANCES,
@@ -20,7 +20,7 @@ namespace input_reader
 
 	struct Inquiry
 	{
-		INQUIRY_TYPE type;
+		InputRequestType type;
 		std::string name;
 		std::string text;
 
@@ -43,7 +43,7 @@ namespace input_reader
 	void ClearFromSpaces(std::string& text);
 
 	// returns inquiry type and erases the type word from text
-	INQUIRY_TYPE ExtractInquiryType(std::string& text);
+	InputRequestType ExtractInquiryType(std::string& text);
 
 	// should be used after ExtractInquiryType, return name of bus/route and erases it from text
 	std::string ExtractInquiryName(std::string& text);

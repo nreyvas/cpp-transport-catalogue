@@ -41,15 +41,12 @@ namespace transport_catalogue
 	{
 		bool IsFound = false;
 		std::string name;
-		std::set<std::string_view> routes;
+		std::set<const Route*> routes;
 	};
 
 	struct StopPairHash
 	{
-		size_t operator() (const std::pair<const Stop*, const Stop*> p) const
-		{
-			return hasher_(p.first->name) * 37 + hasher_(p.second->name);
-		}
+		size_t operator() (const std::pair<const Stop*, const Stop*> p) const;
 		std::hash<std::string> hasher_;
 	};
 

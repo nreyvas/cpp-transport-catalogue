@@ -19,12 +19,12 @@ namespace input_reader
 			Inquiry inq;
 			inq.type = ExtractInquiryType(line);
 			inq.name = ExtractInquiryName(line);
-			if (inq.type == INQUIRY_TYPE::NEW_DISTANCES)
+			if (inq.type == InputRequestType::NEW_DISTANCES)
 			{
-				inq.type = INQUIRY_TYPE::NEW_STOP;
+				inq.type = InputRequestType::NEW_STOP;
 				Inquiry dist_inq;
 				dist_inq.name = inq.name;
-				dist_inq.type = INQUIRY_TYPE::NEW_DISTANCES;
+				dist_inq.type = InputRequestType::NEW_DISTANCES;
 				SplitCoordinatesAndDistances(line, inq.text, dist_inq.text);
 				inquiries.push_back(dist_inq);
 			}
@@ -46,11 +46,11 @@ namespace input_reader
 		for (Inquiry& inquiry : inquiries)
 		{
 			//std::cerr << inquiry.name << '\n';
-			if (inquiry.type == INQUIRY_TYPE::NEW_STOP)
+			if (inquiry.type == InputRequestType::NEW_STOP)
 			{
 				AddStop(inquiry, catalogue);
 			}
-			else if (inquiry.type == INQUIRY_TYPE::NEW_DISTANCES)
+			else if (inquiry.type == InputRequestType::NEW_DISTANCES)
 			{
 				AddDistances(inquiry, catalogue);
 			}
@@ -155,20 +155,20 @@ namespace input_reader
 	}
 
 	// returns inquiry type and erases the type word from text
-	INQUIRY_TYPE ExtractInquiryType(std::string& text)
+	InputRequestType ExtractInquiryType(std::string& text)
 	{
 		size_t space_position = text.find(' ');
 		std::string inq_type = text.substr(0, space_position);
 		text.erase(0, space_position + 1);
 		if (inq_type == "Bus")
 		{
-			return INQUIRY_TYPE::NEW_ROUTE;
+			return InputRequestType::NEW_ROUTE;
 		}
 		if (text.find("m to ") != text.npos)
 		{
-			return INQUIRY_TYPE::NEW_DISTANCES;
+			return InputRequestType::NEW_DISTANCES;
 		}
-		return INQUIRY_TYPE::NEW_STOP;
+		return InputRequestType::NEW_STOP;
 	}
 
 
