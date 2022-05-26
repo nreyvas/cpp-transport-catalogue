@@ -1,7 +1,7 @@
 #include "sstream"
 
 #include "input_reader.h"
-
+/*
 namespace input_reader
 {
 	void ProcessInquiresFromStream(std::istream& is, TransportCatalogue& catalogue)
@@ -45,7 +45,6 @@ namespace input_reader
 	{
 		for (Inquiry& inquiry : inquiries)
 		{
-			//std::cerr << inquiry.name << '\n';
 			if (inquiry.type == InputRequestType::NEW_STOP)
 			{
 				AddStop(inquiry, catalogue);
@@ -66,7 +65,7 @@ namespace input_reader
 		size_t comma_pos = inq.text.find(',');
 		inq.text.erase(comma_pos, 1);
 		std::istringstream iss{ std::move(inq.text) };
-		Coordinates coordinates;
+		Coordinates coordinates{};
 		iss >> coordinates.lat;
 		iss >> coordinates.lng;
 		catalogue.AddStop(std::move(inq.name), coordinates);
@@ -193,4 +192,4 @@ namespace input_reader
 		distances_inquiry_text = std::move(text);
 	}
 }
-
+*/

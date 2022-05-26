@@ -1,0 +1,107 @@
+{
+  "base_requests": [
+    {
+      "type": "Stop",
+      "name": "Stop A",
+      "latitude": 1.0,
+      "longitude": 0.001,
+      "road_distances": {}
+    },
+    {
+      "type": "Stop",
+      "name": "Stop B",
+      "latitude": 1.0,
+      "longitude": 0.002,
+      "road_distances": {
+        "Stop A": 1000,
+        "Stop C": 1000
+      }
+    },
+    {
+      "type": "Stop",
+      "name": "Stop C",
+      "latitude": 1.0,
+      "longitude": 0.003,
+      "road_distances": { "Stop A": 1000 }
+    },
+    {
+      "type": "Bus",
+      "name": "Bus1",
+      "stops": [ "Stop A", "Stop B", "Stop C", "Stop A" ],
+      "is_roundtrip": true
+    },
+    {
+      "type": "Stop",
+      "name": "Maryino",
+      "latitude": -1,
+      "longitude": -2,
+      "road_distances": {
+        "Bratislavskaya": 850,
+        "Borisovo": 1200,
+        "Pechatniki": 5000
+      }
+    },
+    {
+      "type": "Stop",
+      "name": "Borisovo",
+      "latitude": -1.5,
+      "longitude": -3,
+      "road_distances": {
+        "Maryino": 1050
+      }
+    },
+    {
+      "type": "Bus",
+      "name": "Metro",
+      "stops": [ "Borisovo", "Maryino", "Bratislavskaya", "Pechatniki" ],
+      "is_roundtrip": false
+    },
+    {
+      "type": "Stop",
+      "name": "Bratislavskaya",
+      "latitude": 0,
+      "longitude": 0,
+      "road_distances": {
+        "Maryino": 750,
+        "Pechatniki": 4000
+      }
+    },
+    {
+      "latitude": 3,
+      "longitude": 4,
+      "name": "Pechatniki",
+      "road_distances": {
+        "Stop C": 250,
+        "Stop B": 950
+      },
+      "type": "Stop"
+    }
+  ],
+  "stat_requests": [
+    {
+      "id": 1,
+      "type": "Bus",
+      "name": "Bus1"
+    },
+    {
+      "id": 5,
+      "type": "Stop",
+      "name": "Borisovo"
+    },
+    {
+      "id": 10,
+      "name": "Metro",
+      "type": "Bus"
+    },
+    {
+      "id": 11,
+      "name": "Blabra",
+      "type": "Bus"
+    },
+    {
+      "id": 12,
+      "name": "Kolytsevaya",
+      "type": "Stop"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,7 +23,6 @@ namespace input_reader
 		InputRequestType type;
 		std::string name;
 		std::string text;
-
 	};
 
 	void ProcessInquiresFromStream(std::istream& is, TransportCatalogue& catalogue);
@@ -53,3 +52,4 @@ namespace input_reader
 	void SplitCoordinatesAndDistances(std::string& text,
 		std::string& stop_inquiry_text, std::string& distances_inquiry_text);
 }
+*/

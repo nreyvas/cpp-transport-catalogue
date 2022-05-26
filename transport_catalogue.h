@@ -3,53 +3,14 @@
 #include <deque>
 #include <iostream>
 #include <string_view>
-#include <string>
-#include <vector>
 #include <unordered_map>
-#include <set>
 
-#include "geo.h"
+#include "domain.h"
 
 using namespace std::string_literals;
 
 namespace transport_catalogue
 {
-	struct Stop
-	{
-		std::string name;
-		Coordinates coordinates;
-	};
-
-	struct Route
-	{
-		std::string name;
-		std::vector<const Stop*> stops;
-		bool is_circular = false;
-	};
-
-	struct RouteInfo
-	{
-		bool IsFound = false;
-		std::string name;
-		int stop_amount;
-		int unique_stop_amount;
-		double length;
-		double curvature;
-	};
-
-	struct StopInfo
-	{
-		bool IsFound = false;
-		std::string name;
-		std::set<const Route*> routes;
-	};
-
-	struct StopPairHash
-	{
-		size_t operator() (const std::pair<const Stop*, const Stop*> p) const;
-		std::hash<std::string> hasher_;
-	};
-
 	class TransportCatalogue
 	{
 	private:
@@ -65,7 +26,7 @@ namespace transport_catalogue
 		void AddDistance(std::string name_from, std::string name_to, int distance);
 		const Route* GetRouteByName(std::string& name);
 		const Stop* GetStopByName(std::string& name);
-		RouteInfo GetRouteInfo(std::string& name) const;
+		BusInfo GetBusInfo(std::string& name) const;
 		StopInfo GetStopInfo(std::string& name) const;
 		int GetDistance(std::string name_from, std::string name_to) const;
 	private:
@@ -73,6 +34,5 @@ namespace transport_catalogue
 		int CalculateUniqueStops(const Route* route_ptr) const;
 		int CalculateLength(const Route* route_ptr) const;
 		double CalculateCurvature(const Route* route_ptr) const;
-
 	};
 }

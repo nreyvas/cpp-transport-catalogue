@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "transport_catalogue.h"
-
+/*
 namespace stat_reader
 {
 	using namespace transport_catalogue;
@@ -27,3 +27,4 @@ namespace stat_reader
 
 	void ProcessInquiry(std::ostream& os, Inquiry& inq, TransportCatalogue& catalogue);
 }
+*/

@@ -3,7 +3,7 @@
 #include <iomanip>
 
 #include "stat_reader.h"
-
+/*
 namespace stat_reader
 {
 	void ProcessInquiresFromStream(std::istream& is, std::ostream& os, TransportCatalogue& catalogue)
@@ -97,3 +97,4 @@ namespace stat_reader
 		}
 	}
 }
+*/

@@ -1,13 +1,7 @@
 #include "transport_catalogue.h"
-#include "set"
 
 namespace transport_catalogue
 {
-	size_t StopPairHash::operator() (const std::pair<const Stop*, const Stop*> p) const
-	{
-		return hasher_(p.first->name) * 37 + hasher_(p.second->name);
-	}
-
 	void TransportCatalogue::AddRoute(std::string name, std::vector<std::string> stop_names, bool IsCircular)
 	{
 		if (routename_to_route_.count(name)) return;
@@ -29,7 +23,7 @@ namespace transport_catalogue
 	void TransportCatalogue::AddStop(std::string name, Coordinates coordinates)
 	{
 		if (stopname_to_stop_.count(name)) return;
-		auto& stop_ref = stops_database_.emplace_back(Stop{ std::move(name), coordinates });
+		auto& stop_ref = stops_database_.emplace_back(Stop{ name, coordinates });
 		stopname_to_stop_.insert({ std::string_view(stop_ref.name), &stop_ref });
 	}
 
@@ -58,16 +52,16 @@ namespace transport_catalogue
 		return nullptr;
 	}
 
-	RouteInfo TransportCatalogue::GetRouteInfo(std::string& name) const
+	BusInfo TransportCatalogue::GetBusInfo(std::string& name) const
 	{
 		if (routename_to_route_.count(name) == 0)
-			return RouteInfo{ false, name, 0, 0, 0, 0.0 };
+		{
+			return BusInfo{ 0, name, false };
+		}
 		const Route* route_ptr = routename_to_route_.at(name);
-		RouteInfo result;
-		result.IsFound = true;
-		result.name = std::move(name);
-		result.stop_amount = route_ptr->is_circular ? route_ptr->stops.size() : route_ptr->stops.size() * 2 - 1;
-		result.unique_stop_amount = CalculateUniqueStops(route_ptr);
+		BusInfo result{0, name, true};
+		result.stop_count = route_ptr->is_circular ? route_ptr->stops.size() : route_ptr->stops.size() * 2 - 1;
+		result.unique_stop_count = CalculateUniqueStops(route_ptr);
 		result.length = CalculateLength(route_ptr);
 		result.curvature = CalculateCurvature(route_ptr);
 		return result;
@@ -77,9 +71,9 @@ namespace transport_catalogue
 	{
 		if (stopname_to_stop_.count(name) == 0)
 		{
-			return StopInfo{ false, name, {} };
+			return StopInfo{ 0, name, false};
 		}
-		StopInfo result{ true, name, {} };
+		StopInfo result{ 0, name, true };
 
 		if (routes_at_stop_.count(name) != 0)
 		{
