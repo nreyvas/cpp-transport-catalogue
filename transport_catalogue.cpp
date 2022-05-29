@@ -1,12 +1,14 @@
 #include "transport_catalogue.h"
 
+#include <algorithm>
+
 namespace transport_catalogue
 {
 	void TransportCatalogue::AddRoute(std::string name, std::vector<std::string> stop_names, bool IsCircular)
 	{
 		if (routename_to_route_.count(name)) return;
 
-		Route new_route;
+		Bus new_route;
 		new_route.stops = StopNamesToStopPointers(stop_names);
 		new_route.name = std::move(name);
 		new_route.is_circular = IsCircular;
@@ -20,7 +22,7 @@ namespace transport_catalogue
 		}
 	}
 
-	void TransportCatalogue::AddStop(std::string name, Coordinates coordinates)
+	void TransportCatalogue::AddStop(std::string name, geo::Coordinates coordinates)
 	{
 		if (stopname_to_stop_.count(name)) return;
 		auto& stop_ref = stops_database_.emplace_back(Stop{ name, coordinates });
@@ -34,7 +36,7 @@ namespace transport_catalogue
 		distances_.insert({ { stop_from_ptr, stop_to_ptr }, distance });
 	}
 
-	const Route* TransportCatalogue::GetRouteByName(std::string& name)
+	const Bus* TransportCatalogue::GetBusByName(std::string& name)
 	{
 		if (routename_to_route_.count(name))
 		{
@@ -58,7 +60,7 @@ namespace transport_catalogue
 		{
 			return BusInfo{ 0, name, false };
 		}
-		const Route* route_ptr = routename_to_route_.at(name);
+		const Bus* route_ptr = routename_to_route_.at(name);
 		BusInfo result{0, name, true};
 		result.stop_count = route_ptr->is_circular ? route_ptr->stops.size() : route_ptr->stops.size() * 2 - 1;
 		result.unique_stop_count = CalculateUniqueStops(route_ptr);
@@ -100,7 +102,37 @@ namespace transport_catalogue
 		return stop_pointers;
 	}
 
-	int TransportCatalogue::CalculateUniqueStops(const Route* route_ptr) const
+	std::vector<const Bus*> TransportCatalogue::GetBuses() const
+	{
+		std::vector<const Bus*> result;
+		result.reserve(routes_database_.size());
+		for (const Bus& bus : routes_database_)
+		{
+			result.push_back(&bus);
+		}
+		std::sort(result.begin(), result.end(), [](const Bus* lhs, const Bus* rhs)
+			{ return lhs->name < rhs->name; });
+		return result;
+	}
+
+	std::vector<const Stop*> TransportCatalogue::GetActiveStops() const
+	{
+		std::set<const Stop*> set_result;
+		for (const Bus& bus : routes_database_)
+		{
+			for (const Stop* stop_ptr : bus.stops)
+			{
+				//result.push_back(stop_ptr);
+				set_result.insert(stop_ptr);
+			}
+		}
+		std::vector<const Stop*> result{ set_result.begin(), set_result.end() };
+		std::sort(result.begin(), result.end(), [](const Stop* lhs, const Stop* rhs)
+			{ return lhs->name < rhs->name;	});
+		return result;
+	}
+
+	int TransportCatalogue::CalculateUniqueStops(const Bus* route_ptr) const
 	{
 		std::set<std::string_view> unique_stops;
 		for (const Stop* stop_ptr : route_ptr->stops)
@@ -110,10 +142,10 @@ namespace transport_catalogue
 		return int(unique_stops.size());
 	}
 
-	int TransportCatalogue::CalculateLength(const Route* route_ptr) const
+	int TransportCatalogue::CalculateLength(const Bus* route_ptr) const
 	{
 		double length = 0.0;
-		for (int i = 0; i < route_ptr->stops.size() - 1; ++i)
+		for (size_t i = 0; i < route_ptr->stops.size() - 1; ++i)
 		{
 			if (distances_.count({ route_ptr->stops[i], route_ptr->stops[i + 1] }) != 0)
 			{
@@ -141,10 +173,10 @@ namespace transport_catalogue
 		return length;
 	}
 
-	double TransportCatalogue::CalculateCurvature(const Route* route_ptr) const
+	double TransportCatalogue::CalculateCurvature(const Bus* route_ptr) const
 	{
 		double geo_length = 0.0;
-		for (int i = 0; i < route_ptr->stops.size() - 1; ++i)
+		for (size_t i = 0; i < route_ptr->stops.size() - 1; ++i)
 		{
 			geo_length += ComputeDistance(route_ptr->stops[i]->coordinates, route_ptr->stops[i + 1]->coordinates);
 		}

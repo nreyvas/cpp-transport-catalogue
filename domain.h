@@ -10,10 +10,10 @@ namespace transport_catalogue
 	struct Stop
 	{
 		std::string name;
-		Coordinates coordinates;
+		geo::Coordinates coordinates;
 	};
 	
-	struct Route
+	struct Bus
 	{
 		std::string name;
 		std::vector<const Stop*> stops;
@@ -23,7 +23,8 @@ namespace transport_catalogue
 	enum class RequestType
     {
         STOP,
-        BUS
+        BUS,
+		MAP
     };
 
 	struct Info
@@ -50,7 +51,12 @@ namespace transport_catalogue
 	{
 		StopInfo() = default;
 		StopInfo(int no, std::string n, bool found);
-		std::set<const Route*> routes;
+		std::set<const Bus*> routes;
+	};
+
+	struct MapInfo : Info
+	{
+		std::string svg_code;
 	};
 	
 	struct StopPairHash

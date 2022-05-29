@@ -2,6 +2,7 @@
 
 #include "request_handler.h"
 #include "json.h"
+#include "map_renderer.h"
 
 namespace transport_catalogue
 {
@@ -15,6 +16,8 @@ namespace transport_catalogue
 
 		std::vector<std::unique_ptr<BaseRequest>> GetBaseRequests();
 
+		renderer::MapRenderer GetRenderSettings() const;
+
 		std::vector<std::unique_ptr<StatRequest>> GetStatRequests();
 
 		void FillAnswers(std::vector<std::unique_ptr<Info>> answers);
@@ -27,5 +30,7 @@ namespace transport_catalogue
 		std::ostream& output_;
 		json::Node json_requests_;
 		json::Node json_answers_{ json::Array{} };
+
+		svg::Color ProcessColorFromNode(const json::Node& color_node) const;
 	};
 }

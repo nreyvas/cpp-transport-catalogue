@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <optional>
 #include <unordered_set>
@@ -9,6 +9,8 @@
 #include <memory>
 
 #include "transport_catalogue.h"
+#include "svg.h"
+#include "map_renderer.h"
 
 namespace transport_catalogue
 {
@@ -23,8 +25,8 @@ namespace transport_catalogue
 
     struct BaseStopRequest : BaseRequest
     {
-        BaseStopRequest(RequestType t, std::string n, Coordinates c, std::map<std::string, int> rd);
-        Coordinates coords;
+        BaseStopRequest(RequestType t, std::string n, geo::Coordinates c, std::map<std::string, int> rd);
+        geo::Coordinates coords;
         std::map<std::string, int> road_distances;
     };
 
@@ -34,29 +36,6 @@ namespace transport_catalogue
         std::vector<std::string> stops;
         bool is_roundtrip;
     };
-
-    //---------------------------------------------------------------------------
-        
-    class BaseRequestHandler
-    {
-    public:
-        BaseRequestHandler(TransportCatalogue& catalogue)
-            : catalogue_(catalogue) {}
-
-        void AddStop(BaseStopRequest& inquiry);
-
-        void AddDistance(std::string stop_from, std::string stop_to, int distance);
-
-        void AddBus(BaseBusRequest& inquiry);
-        
-    private:
-
-        TransportCatalogue& catalogue_;
-    };
-
-    void ProcessBaseRequests(std::vector<std::unique_ptr<BaseRequest>> requests,
-        BaseRequestHandler handler);
-    
     
     //---------------------------------------------------------------------------
 
@@ -68,29 +47,38 @@ namespace transport_catalogue
         std::string name;
     };
     
-    class StatRequestHandler {
+    class RequestHandler {
     public:
 
-        StatRequestHandler(const TransportCatalogue& catalogue);
+        RequestHandler(TransportCatalogue& catalogue, const renderer::MapRenderer& renderer);
+
+        void AddStop(BaseStopRequest& inquiry);
+
+        void AddDistance(std::string stop_from, std::string stop_to, int distance);
+
+        void AddBus(BaseBusRequest& inquiry);
 
         BusInfo GetBusInfo(StatRequest& request) const;
 
         StopInfo GetStopInfo(StatRequest& request) const;
 
-        //RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer);
+        svg::Document RenderMap() const;
 
-        //std::optional<BusStat> GetBusStat(const std::string_view& bus_name) const;
-
-        //const std::unordered_set<BusPtr>* GetBusesByStop(const std::string_view& stop_name) const;
-
-        //svg::Document RenderMap() const;
 
     private:
-        // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
-        const TransportCatalogue& catalogue_;
-        //const renderer::MapRenderer& renderer_;
+
+        TransportCatalogue& catalogue_;
+        const renderer::MapRenderer& renderer_;
+
+        std::vector<svg::Polyline> GenerateBuses(const renderer::SphereProjector& proj) const;
+        std::vector<svg::Text> GenerateBusNames(const renderer::SphereProjector& proj) const;
+        std::vector<svg::Circle> GenerateStops(const renderer::SphereProjector& proj) const;
+        std::vector<svg::Text> GenerateStopNames(const renderer::SphereProjector& proj) const;
     };
 
+    void ProcessBaseRequests(std::vector<std::unique_ptr<BaseRequest>> requests,
+        RequestHandler handler);
+
     std::vector<std::unique_ptr<Info>> ProcessStatRequests
-        (std::vector<std::unique_ptr<StatRequest>> requests, StatRequestHandler handler);
+        (std::vector<std::unique_ptr<StatRequest>> requests, RequestHandler handler);
 }

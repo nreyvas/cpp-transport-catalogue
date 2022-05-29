@@ -42,6 +42,12 @@
     <ClCompile Include="json_reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="svg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="map_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geo.h">
@@ -66,6 +72,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="json_reader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="svg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="map_renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

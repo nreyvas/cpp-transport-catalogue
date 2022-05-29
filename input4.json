@@ -1,0 +1,149 @@
+{
+  "base_requests": [
+    {
+      "type": "Bus",
+      "name": "838",
+      "stops": [
+        "B",
+        "D",
+        "D",
+        "C",
+        "B"
+      ],
+      "is_roundtrip": true
+    },
+    {
+      "type": "Bus",
+      "name": "14",
+      "stops": [
+        "A",
+        "B",
+        "C",
+        "A"
+      ],
+      "is_roundtrip": true
+    },
+    {
+      "type": "Stop",
+      "name": "B",
+      "latitude": 3,
+      "longitude": 3,
+      "road_distances": {
+        "A": 300,
+        "C": 300
+      }
+    },
+    {
+      "type": "Stop",
+      "name": "A",
+      "latitude": 6,
+      "longitude": 1,
+      "road_distances": {
+        "B": 200
+      }
+    },
+    {
+      "type": "Bus",
+      "name": "1",
+      "stops": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "is_roundtrip": false
+    },
+    {
+      "type": "Bus",
+      "name": "114",
+      "stops": [
+
+      ],
+      "is_roundtrip": true
+    },
+    {
+      "type": "Stop",
+      "name": "C",
+      "latitude": 1,
+      "longitude": 1,
+      "road_distances": {
+        "A": 500,
+        "D": 500,
+        "B": 100
+      }
+    },
+    {
+      "type": "Stop",
+      "name": "D",
+      "latitude": 1,
+      "longitude": 6,
+      "road_distances": {
+        "D": 100,
+        "B": 300
+      }
+    },
+    {
+      "type": "Bus",
+      "name": "257",
+      "stops": [
+        "D",
+        "C",
+        "B"
+      ],
+      "is_roundtrip": false
+    },
+    {
+      "type": "Bus",
+      "name": "25",
+      "stops": [],
+      "is_roundtrip": false
+    },
+    {
+      "type": "Stop",
+      "name": "F",
+      "latitude": 6,
+      "longitude": 6,
+      "road_distances": {}
+    },
+    {
+      "type": "Bus",
+      "name": "256",
+      "stops": [
+        "A",
+        "C"
+      ],
+      "is_roundtrip": false
+    }
+  ],
+  "render_settings": {
+    "width": 600,
+    "height": 400,
+    "padding": 50,
+    "stop_radius": 5,
+    "line_width": 14.5,
+    "bus_label_font_size": 20,
+    "bus_label_offset": [
+      7,
+      15
+    ],
+    "stop_label_font_size": 20,
+    "stop_label_offset": [
+      7,
+      -3
+    ],
+    "underlayer_color": [
+      255,
+      255,
+      255,
+      0.85
+    ],
+    "underlayer_width": 3,
+    "color_palette": [
+      "green",
+      [ 255, 160, 0 ],
+      "red"
+    ]
+  },
+  "stat_requests": [
+  ]
+}
