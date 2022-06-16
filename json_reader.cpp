@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "json_reader.h"
+#include "json_builder.h"
 
 namespace transport_catalogue
 {
@@ -148,68 +149,67 @@ namespace transport_catalogue
 
 	void JsonReader::FillAnswers(std::vector<std::unique_ptr<Info>> answers)
 	{
+		json::Builder new_node;
+		new_node.StartArray();
 		for (const auto& answer_ptr : answers)
 		{
-			if (!(answer_ptr->IsFound))
+			if (!(answer_ptr->is_found))
 			{
-				json::Dict answer_map
-				{
-					{"request_id", json::Node{answer_ptr->id}},
-					{"error_message", json::Node{"not found"s}}
-				};
-				json_answers_.PushBack(json::Node{ answer_map });
+				new_node.StartDict().
+					Key("request_id").Value(answer_ptr->id).
+					Key("error_message").Value("not found"s).EndDict();
 			}
 			else if (answer_ptr->type == RequestType::BUS)
 			{
 				auto& answer_ref = static_cast<BusInfo&>(*answer_ptr);
 
-				json::Dict answer_map
-				{ {"curvature"s, json::Node{answer_ref.curvature}},
-					{"request_id"s, json::Node{answer_ref.id}},
-					{"route_length"s, json::Node{answer_ref.length}},
-					{"stop_count"s, json::Node{answer_ref.stop_count}},
-					{"unique_stop_count"s, json::Node{answer_ref.unique_stop_count}}
-				};
-				
-				json_answers_.PushBack(json::Node{ answer_map });
+				new_node.StartDict().
+					Key("curvature"s).Value(answer_ref.curvature).
+					Key("request_id"s).Value(answer_ref.id).
+					Key("route_length"s).Value(answer_ref.length).
+					Key("stop_count"s).Value(answer_ref.stop_count).
+					Key("unique_stop_count"s).Value(answer_ref.unique_stop_count).
+					EndDict();
 			}
 			else if (answer_ptr->type == RequestType::STOP)
 			{
 				auto& answer_ref = static_cast<StopInfo&>(*answer_ptr);
 
-				std::vector<json::Node> bus_node_list;
-				bus_node_list.reserve(answer_ref.routes.size());
+
+				std::vector<const Bus*> bus_ptr_list;
+				bus_ptr_list.reserve(answer_ref.routes.size());
 				for (const Bus* bus_ptr : answer_ref.routes)
 				{
-					bus_node_list.push_back(json::Node{ bus_ptr->name });
+					bus_ptr_list.push_back(bus_ptr);
 				}
-				std::sort(bus_node_list.begin(), bus_node_list.end(), [](const auto& lhs, const auto& rhs)
-					{ return lhs.AsString() < rhs.AsString(); });
-				json::Dict answer_map
-				{
-					{"buses", bus_node_list},
-					{"request_id", json::Node{answer_ref.id}}
-				};
+				std::sort(bus_ptr_list.begin(), bus_ptr_list.end(), [](const auto& lhs, const auto& rhs)
+					{ return lhs->name < rhs->name; });
 
-				json_answers_.PushBack(json::Node{ answer_map });
+				new_node.StartDict().Key("buses").StartArray();
+				for (const Bus* bus_ptr : bus_ptr_list)
+				{
+					new_node.Value(bus_ptr->name);
+				}
+				new_node.EndArray().Key("request_id").Value(answer_ref.id).EndDict();
 			}
 			else if (answer_ptr->type == RequestType::MAP)
 			{
 				auto& answer_ref = static_cast<MapInfo&>(*answer_ptr);
-				json::Dict answer_map
-				{
-					{"map", json::Node{answer_ref.svg_code}},
-					{"request_id", json::Node{answer_ref.id}}
-				};
 
-				json_answers_.PushBack(json::Node{ answer_map });
+				new_node.StartDict().
+					Key("map").Value(answer_ref.svg_code).
+					Key("request_id").Value(answer_ref.id).
+					EndDict();
 			}
 		}
+		new_node.EndArray();
+		json_answers_ = new_node.Build();
 	}
+
 
 	void JsonReader::OutputAnswers()
 	{
-		json::PrintNode(json_answers_, output_);
+		json::PrintNode(json_answers_, json::PrintContext{ output_ });
 	}
 
 	svg::Color JsonReader::ProcessColorFromNode(const json::Node& color_node) const

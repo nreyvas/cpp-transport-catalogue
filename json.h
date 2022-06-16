@@ -26,10 +26,13 @@ namespace json
 
         using Value = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
 
+        Node(Value v)
+            : value_(std::move(v)) {}
+
         template <typename T>
         Node(T value)
             : value_(std::move(value)) {}
-        
+
         Node();
 
         bool IsInt() const;
@@ -98,24 +101,35 @@ namespace json
     Document Load(std::istream& input);
 
     //--------------------------------------------------------------------------
-    
+
+    struct PrintContext
+    {
+        std::ostream& out;
+        int indent_step = 4;
+        int indent = 0;
+
+        void PrintIndent() const;
+
+        PrintContext Indented() const;
+    };
+
     template <typename Value>
     void PrintValue(const Value& value, std::ostream& out)
     {
         out << value;
     }
 
-    void PrintValue(bool value, std::ostream& out);
+    void PrintValue(bool value, const PrintContext& ctx);
 
-    void PrintValue(std::string s, std::ostream& out);
+    void PrintValue(std::string s, const PrintContext& ctx);
 
-    void PrintValue(const std::vector<Node>& values, std::ostream& out);
+    void PrintValue(const std::vector<Node>& values, const PrintContext& ctx);
 
-    void PrintValue(std::map<std::string, Node> values, std::ostream& out);
+    void PrintValue(std::map<std::string, Node> values, const PrintContext& ctx);
 
-    void PrintValue(std::nullptr_t, std::ostream& out);
+    void PrintValue(std::nullptr_t, const PrintContext& ctx);
 
-    void PrintNode(const Node& node, std::ostream& out);
+    void PrintNode(const Node& node, const PrintContext& ctx);
 
     void Print(const Document& d, std::ostream& out);
 }

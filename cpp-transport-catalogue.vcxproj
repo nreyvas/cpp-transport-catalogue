@@ -144,6 +144,7 @@
     <ClCompile Include="geo.cpp" />
     <ClCompile Include="input_reader.cpp" />
     <ClCompile Include="json.cpp" />
+    <ClCompile Include="json_builder.cpp" />
     <ClCompile Include="json_reader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="map_renderer.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="geo.h" />
     <ClInclude Include="input_reader.h" />
     <ClInclude Include="json.h" />
+    <ClInclude Include="json_builder.h" />
     <ClInclude Include="json_reader.h" />
     <ClInclude Include="map_renderer.h" />
     <ClInclude Include="request_handler.h" />

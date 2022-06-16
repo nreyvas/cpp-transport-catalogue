@@ -1,4 +1,4 @@
-#include "json.h"
+﻿#include "json.h"
 #include <iostream>
 
 using namespace std;
@@ -484,7 +484,20 @@ namespace json
 
     //-------------------------------- Printing functions -------------------------------------
 
-    void PrintValue(std::string s, std::ostream& out)
+    void PrintContext::PrintIndent() const
+    {
+        for (int i = 0; i < indent; ++i)
+        {
+            out.put(' ');
+        }
+    }
+
+    PrintContext PrintContext::Indented() const
+    {
+        return { out, indent_step, indent_step + indent };
+    }
+
+    void PrintValue(std::string s, const PrintContext& ctx)
     {
         std::string result_string{ "\""s };
         for (size_t i = 0; i < s.size(); ++i)
@@ -520,59 +533,81 @@ namespace json
             }
         }
         result_string.append("\""s);
-        out << result_string;
-        // assert(Print(LoadJSON(escape_chars).GetRoot()) == "\"\\r\\n\t\\\"\\\\\""s);
+        ctx.out << result_string;
     }
 
-    void PrintValue(std::nullptr_t, std::ostream& out)
+    void PrintValue(std::nullptr_t, const PrintContext& ctx)
     {
-        out << "null"sv;
+        ctx.out << "null"sv;
     }
 
-    void PrintValue(bool value, std::ostream& out)
+    void PrintValue(bool value, const PrintContext& ctx)
     {
-        out << (value ? "true"s : "false"s);
+        ctx.out << (value ? "true"s : "false"s);
     }
 
-    void PrintValue(const std::vector<Node>& values, std::ostream& out)
+    void PrintValue(double v, const PrintContext& ctx)
     {
-        out << '[';
+        ctx.out << v;
+    }
+
+    void PrintValue(int v, const PrintContext& ctx)
+    {
+        ctx.out << v;
+    }
+
+    void PrintValue(const std::vector<Node>& values, const PrintContext& ctx)
+    {
+        std::ostream& out = ctx.out;
+        out << "[\n"sv;
         bool is_first = true;
+        auto inner_ctx = ctx.Indented();
         for (const Node& n : values)
         {
             if (!is_first)
             {
-                out << ',';
+                out << ",\n"sv;
             }
-            PrintNode(n, out);
+            inner_ctx.PrintIndent();
+            PrintNode(n, inner_ctx);
             is_first = false;
         }
+        out.put('\n');
+        ctx.PrintIndent();
         out << ']';
     }
 
-    void PrintValue(std::map<std::string, Node> values, std::ostream& out)
+    void PrintValue(std::map<std::string, Node> values, const PrintContext& ctx)
     {
-        out << "{ "s;
+        std::ostream& out = ctx.out;
+        out << "{\n"sv;
         bool is_first = true;
+        auto inner_ctx = ctx.Indented();
         for (const auto& [key, node] : values)
         {
             if (!is_first)
             {
-                out << ", "s;
+                out << ",\n"sv;
             }
-            out << "\""s << key << "\": "s;
-            PrintNode(node, out);
+            inner_ctx.PrintIndent();
+            out.put('\"');
+            PrintValue(key, ctx.out);
+            out << "\": "sv;
+            PrintNode(node, inner_ctx);
             is_first = false;
-        }        out << " }"s;
+        }
+        out.put('\n');
+        ctx.PrintIndent();
+        out.put('}');
     }
 
-    void PrintNode(const Node& node, std::ostream& out)
+    void PrintNode(const Node& node, const PrintContext& ctx)
     {
-        std::visit([&out](const auto& value) { PrintValue(value, out);  }, node.GetValue());
+        std::visit([&ctx](const auto& value) { PrintValue(value, ctx);  }, node.GetValue());
     }
 
     void Print(const Document& d, std::ostream& out)
     {
-        PrintNode(d.GetRoot(), out);
+        PrintNode(d.GetRoot(), PrintContext{ out });
     }
 }

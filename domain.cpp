@@ -6,7 +6,7 @@ namespace transport_catalogue
 		: id(no),
 		name(std::move(n)),
 		type(t),
-		IsFound(found) {}
+		is_found(found) {}
 
 	BusInfo::BusInfo(int no, std::string n, bool found)
 		: Info(no, n, RequestType::BUS, found) {}

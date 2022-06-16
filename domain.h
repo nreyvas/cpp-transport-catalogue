@@ -34,7 +34,7 @@ namespace transport_catalogue
 		int id = 0;
 		std::string name;
 		RequestType type;
-		bool IsFound = false;
+		bool is_found = false;
 	};
 	
 	struct BusInfo : Info

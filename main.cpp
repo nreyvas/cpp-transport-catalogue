@@ -17,9 +17,9 @@ int main()
 	std::string input_json = "D:/CPP/YANDEX/cpp-transport-catalogue/input6.json";
 	std::ifstream ifs{ input_json };
 	
-	//JsonReader json_reader(ifs, std::cout);
+	JsonReader json_reader(ifs, std::cout);
 
-	JsonReader json_reader(std::cin, std::cout);
+	//JsonReader json_reader(std::cin, std::cout);
 	json_reader.ProcessRequests();
 
 	renderer::MapRenderer renderer = json_reader.GetRenderSettings();
@@ -30,6 +30,4 @@ int main()
 		ProcessStatRequests(json_reader.GetStatRequests(), request_handler));
 
 	json_reader.OutputAnswers();
-	
-	//std::cout << "\ndone\n";
 }

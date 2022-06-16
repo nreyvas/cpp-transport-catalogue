@@ -296,7 +296,7 @@ namespace transport_catalogue
 				std::unique_ptr<MapInfo> map_ptr{ new MapInfo{} };
 				map_ptr->id = request_ptr->id;
 				map_ptr->type = RequestType::MAP;
-				map_ptr->IsFound = true;
+				map_ptr->is_found = true;
 
 				std::ostringstream oss;
 				handler.RenderMap().Render(oss);
@@ -305,8 +305,6 @@ namespace transport_catalogue
 				result.push_back(std::move(map_ptr));
 			}
 		}
-
 		return result;
-
 	}
 }
