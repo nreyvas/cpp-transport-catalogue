@@ -11,6 +11,7 @@
 #include "transport_catalogue.h"
 #include "svg.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 
 namespace transport_catalogue
 {
@@ -41,13 +42,21 @@ namespace transport_catalogue
 
     struct StatRequest
     {
-        StatRequest(int no, RequestType t, std::string n);
+        StatRequest(int no, RequestType t, std::string n, std::string from, std::string to);
         int id;
         RequestType type;
         std::string name;
+        std::string stop_from;
+        std::string stop_to;
     };
     
     class RequestHandler {
+    private:
+
+        TransportCatalogue& catalogue_;
+        const renderer::MapRenderer& renderer_;
+        router::TransportRouter router_;
+
     public:
 
         RequestHandler(TransportCatalogue& catalogue, const renderer::MapRenderer& renderer);
@@ -62,23 +71,28 @@ namespace transport_catalogue
 
         StopInfo GetStopInfo(StatRequest& request) const;
 
+        RouteInfo GetRouteInfo(StatRequest& request) const;
+
         svg::Document RenderMap() const;
 
+        void SetRouterSettings(int wait_time, double bus_velocity);
+
+        void BuildRouter();
+
+        void ActivateRouter();
 
     private:
-
-        TransportCatalogue& catalogue_;
-        const renderer::MapRenderer& renderer_;
 
         std::vector<svg::Polyline> GenerateBuses(const renderer::SphereProjector& proj) const;
         std::vector<svg::Text> GenerateBusNames(const renderer::SphereProjector& proj) const;
         std::vector<svg::Circle> GenerateStops(const renderer::SphereProjector& proj) const;
         std::vector<svg::Text> GenerateStopNames(const renderer::SphereProjector& proj) const;
+
     };
 
     void ProcessBaseRequests(std::vector<std::unique_ptr<BaseRequest>> requests,
-        RequestHandler handler);
+        RequestHandler& handler);
 
     std::vector<std::unique_ptr<Info>> ProcessStatRequests
-        (std::vector<std::unique_ptr<StatRequest>> requests, RequestHandler handler);
+        (std::vector<std::unique_ptr<StatRequest>> requests, RequestHandler& handler);
 }

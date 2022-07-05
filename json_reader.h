@@ -18,6 +18,8 @@ namespace transport_catalogue
 
 		renderer::MapRenderer GetRenderSettings() const;
 
+		std::pair<int, double> GetRoutingSettings() const;	// gets bus waiting time and bus velocity
+
 		std::vector<std::unique_ptr<StatRequest>> GetStatRequests();
 
 		void FillAnswers(std::vector<std::unique_ptr<Info>> answers);

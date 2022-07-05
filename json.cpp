@@ -7,6 +7,9 @@ namespace json
 {
     //---------------------- Node methods ----------------------------------------------
 
+    Node::Node(Value v)
+        : value_(std::move(v)) {}
+
     Node::Node() : value_(std::nullptr_t{}) {}
 
     bool Node::IsInt() const

@@ -23,16 +23,19 @@ namespace transport_catalogue
 		stops(s),
 		is_roundtrip(ir) {}
 
-	StatRequest::StatRequest(int no, RequestType t, std::string n)
+	StatRequest::StatRequest(int no, RequestType t, std::string n, std::string from, std::string to)
 		: id(no),
 		type(t),
-		name(n) {}
+		name(n),
+		stop_from(from),
+		stop_to(to) {}
 
-	//---------------------------------------------------------------------------------------
+	//-------------------------RequestHandler methods---------------------------------
 
 	RequestHandler::RequestHandler(TransportCatalogue& catalogue, const renderer::MapRenderer& renderer)
 		: catalogue_(catalogue),
-		renderer_(std::move(renderer)) {}
+		renderer_(std::move(renderer)),
+		router_(catalogue) {}
 
 	void RequestHandler::AddStop(BaseStopRequest& inquiry)
 	{
@@ -63,8 +66,17 @@ namespace transport_catalogue
 		return result;
 	}
 
+	RouteInfo RequestHandler::GetRouteInfo(StatRequest& request) const
+	{
+		const Stop* stop_from = catalogue_.GetStopByName(request.stop_from);
+		const Stop* stop_to = catalogue_.GetStopByName(request.stop_to);
+		RouteInfo result = router_.GetRouteInfo(stop_from, stop_to);
+		result.id = request.id;
+		return result;
+	}
+
 	void ProcessBaseRequests(std::vector<std::unique_ptr<BaseRequest>> requests,
-		RequestHandler handler)
+		RequestHandler& handler)
 	{
 
 		std::sort(requests.begin(), requests.end(), [](const auto& lhs, const auto& rhs)
@@ -94,6 +106,7 @@ namespace transport_catalogue
 				}
 			}
 		}
+		handler.BuildRouter();
 	}
 
 	
@@ -144,6 +157,12 @@ namespace transport_catalogue
 		}
 		
 		return result;
+	}
+
+	void RequestHandler::SetRouterSettings(int wait_time, double bus_velocity)
+	{
+		router_.SetBusWaitTime(wait_time);
+		router_.SetBusVelocity(bus_velocity);
 	}
 	
 	std::vector<svg::Polyline> RequestHandler::GenerateBuses(const renderer::SphereProjector& proj) const
@@ -274,9 +293,29 @@ namespace transport_catalogue
 		return text_stops;
 	}
 
-	std::vector<std::unique_ptr<Info>> ProcessStatRequests
-	(std::vector<std::unique_ptr<StatRequest>> requests, RequestHandler handler)
+	void RequestHandler::BuildRouter()
 	{
+		for (const Stop& stop : catalogue_.GetAllStops())
+		{
+			router_.AddStop(stop);
+		}
+		for (const Bus& bus : catalogue_.GetAllBuses())
+		{
+			router_.AddBus(bus);
+		}
+	}
+
+	void RequestHandler::ActivateRouter()
+	{
+		router_.Activate();
+	}
+
+	//-----------------------------------------------------------------------------------------
+
+	std::vector<std::unique_ptr<Info>> ProcessStatRequests
+	(std::vector<std::unique_ptr<StatRequest>> requests, RequestHandler& handler)
+	{
+		handler.ActivateRouter();
 		std::vector < std::unique_ptr<Info>> result;
 
 		for (auto& request_ptr : requests)
@@ -291,7 +330,7 @@ namespace transport_catalogue
 				auto answer_ptr = std::make_unique<BusInfo>(handler.GetBusInfo(*request_ptr));
 				result.push_back(std::move(answer_ptr));
 			}
-			else
+			else if (request_ptr->type == RequestType::MAP)
 			{
 				std::unique_ptr<MapInfo> map_ptr{ new MapInfo{} };
 				map_ptr->id = request_ptr->id;
@@ -303,6 +342,11 @@ namespace transport_catalogue
 				map_ptr->svg_code = oss.str();
 
 				result.push_back(std::move(map_ptr));
+			}
+			else
+			{
+				auto answer_ptr = std::make_unique<RouteInfo>(handler.GetRouteInfo(*request_ptr));
+				result.push_back(std::move(answer_ptr));
 			}
 		}
 		return result;

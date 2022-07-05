@@ -108,6 +108,21 @@ namespace transport_catalogue
 		return renderer;
 	}
 
+	std::pair<int, double> JsonReader::GetRoutingSettings() const
+	{
+		const std::map<std::string, json::Node>& requests_map = json_requests_.AsMap();
+		if (requests_map.count("routing_settings"s) == 0)
+		{
+			return { 0, 0.0 };
+		}
+
+		const json::Dict settings_map = requests_map.at("routing_settings"s).AsMap();
+
+		int waiting_time = settings_map.at("bus_wait_time"s).AsInt();
+		double bus_velocity = settings_map.at("bus_velocity"s).AsDouble();
+
+		return { waiting_time, bus_velocity };
+	}
 
 	std::vector<std::unique_ptr<StatRequest>> JsonReader::GetStatRequests()
 	{
@@ -120,13 +135,17 @@ namespace transport_catalogue
 		for (const json::Node& node_request : stat_requests_array)
 		{
 			RequestType type;
-			if (node_request.AsMap().at("type"s).AsString() == "Bus")
+			if (node_request.AsMap().at("type"s).AsString() == "Bus"s)
 			{
 				type = RequestType::BUS;
 			}
-			else if (node_request.AsMap().at("type"s).AsString() == "Stop")
+			else if (node_request.AsMap().at("type"s).AsString() == "Stop"s)
 			{
 				type = RequestType::STOP;
+			}
+			else if (node_request.AsMap().at("type"s).AsString() == "Route"s)
+			{
+				type = RequestType::ROUTE;
 			}
 			else
 			{
@@ -134,13 +153,21 @@ namespace transport_catalogue
 			}
 
 			std::string name{};
-			if (type != RequestType::MAP)
+			if (type == RequestType::BUS || type == RequestType::STOP)
 			{
 				name = node_request.AsMap().at("name"s).AsString();
 			}
 
+			std::string stop_from{};
+			std::string stop_to{};
+			if (type == RequestType::ROUTE)
+			{
+				stop_from = node_request.AsMap().at("from"s).AsString();
+				stop_to = node_request.AsMap().at("to"s).AsString();
+			}
+
 			auto new_request_ptr = std::make_unique<StatRequest>(
-				node_request.AsMap().at("id"s).AsInt(), type, name);
+				node_request.AsMap().at("id"s).AsInt(), type, name, stop_from, stop_to);
 
 			result.push_back(std::move(new_request_ptr));
 		}
@@ -175,7 +202,6 @@ namespace transport_catalogue
 			{
 				auto& answer_ref = static_cast<StopInfo&>(*answer_ptr);
 
-
 				std::vector<const Bus*> bus_ptr_list;
 				bus_ptr_list.reserve(answer_ref.routes.size());
 				for (const Bus* bus_ptr : answer_ref.routes)
@@ -200,6 +226,37 @@ namespace transport_catalogue
 					Key("map").Value(answer_ref.svg_code).
 					Key("request_id").Value(answer_ref.id).
 					EndDict();
+			}
+			else if (answer_ptr->type == RequestType::ROUTE)
+			{
+				auto& answer_ref = static_cast<RouteInfo&>(*answer_ptr);
+
+				new_node.StartDict().
+					Key("request_id").Value(answer_ref.id).
+					Key("total_time").Value(answer_ref.total_time).
+					Key("items").StartArray();
+
+				for (const auto& route_element : answer_ref.route_elements)
+				{
+					if (route_element.type == RouteInfo::ElementType::WAIT)
+					{
+						new_node.StartDict().
+							Key("type").Value("Wait"s).
+							Key("stop_name").Value(std::string{ route_element.stop_name.begin(), route_element.stop_name.end() }).
+							Key("time").Value(route_element.time).
+							EndDict();
+					}
+					else
+					{
+						new_node.StartDict().
+							Key("type").Value("Bus"s).
+							Key("bus").Value(std::string{ route_element.bus_name.begin(), route_element.bus_name.end() }).
+							Key("span_count").Value(route_element.span_count).
+							Key("time").Value(route_element.time).
+							EndDict();
+					}
+				}
+				new_node.EndArray().EndDict();
 			}
 		}
 		new_node.EndArray();

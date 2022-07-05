@@ -89,7 +89,11 @@ namespace transport_catalogue
 	{
 		const Stop* stop_from_ptr = stopname_to_stop_.at(name_from);
 		const Stop* stop_to_ptr = stopname_to_stop_.at(name_to);
-		return distances_.at({ stop_from_ptr, stop_to_ptr });
+		if (distances_.count({ stop_from_ptr, stop_to_ptr }) != 0)
+		{
+			return distances_.at({ stop_from_ptr, stop_to_ptr });
+		}
+		return distances_.at({ stop_to_ptr, stop_from_ptr });
 	}
 
 	std::vector<const Stop*> TransportCatalogue::StopNamesToStopPointers(std::vector<std::string> stop_names)
@@ -122,7 +126,6 @@ namespace transport_catalogue
 		{
 			for (const Stop* stop_ptr : bus.stops)
 			{
-				//result.push_back(stop_ptr);
 				set_result.insert(stop_ptr);
 			}
 		}
@@ -130,6 +133,34 @@ namespace transport_catalogue
 		std::sort(result.begin(), result.end(), [](const Stop* lhs, const Stop* rhs)
 			{ return lhs->name < rhs->name;	});
 		return result;
+	}
+
+	const std::deque<Stop>& TransportCatalogue::GetAllStops() const
+	{
+		return stops_database_;
+	}
+
+	const std::deque<Bus>& TransportCatalogue::GetAllBuses() const
+	{
+		return routes_database_;
+	}
+
+	const std::vector<std::pair<int,int>> TransportCatalogue::GetBusDistances(const Bus& bus)
+	{
+		if (bus.stops.size() < 2)
+		{
+			return {};
+		}
+
+		std::vector<std::pair<int,int>> distances;
+		distances.reserve(bus.stops.size() - 1);
+		for (size_t i = 1; i < bus.stops.size(); ++i)
+		{
+			std::pair<int, int> distance_pair{ GetDistance(bus.stops[i - 1]->name, bus.stops[i]->name),
+										GetDistance(bus.stops[i]->name, bus.stops[i - 1]->name) };
+			distances.push_back(distance_pair);
+		}
+		return distances;
 	}
 
 	int TransportCatalogue::CalculateUniqueStops(const Bus* route_ptr) const

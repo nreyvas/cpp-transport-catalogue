@@ -16,7 +16,7 @@ namespace json
 	{
 	public:
 
-		KeyContext Key(std::string s);
+		KeyContext Key(const std::string& s);
 		ItemContext Value(Node::Value v);
 		DictItemContext StartDict();
 		ArrayItemContext StartArray();
@@ -38,7 +38,7 @@ namespace json
 	public:
 		ItemContext(Builder& b);
 
-		KeyContext Key(std::string s);
+		KeyContext Key(const std::string& s);
 		ItemContext Value(Node::Value v);
 		DictItemContext StartDict();
 		ArrayItemContext StartArray();
@@ -57,7 +57,7 @@ namespace json
 
 		KeyValueContext Value(Node::Value v);
 
-		KeyContext Key(std::string s) = delete;
+		KeyContext Key(const std::string& s) = delete;
 		Builder& EndDict() = delete;
 		Builder& EndArray() = delete;
 		json::Node Build() = delete;
@@ -108,7 +108,7 @@ namespace json
 
 		ArrayValueContext Value(Node::Value v);
 
-		KeyContext Key(std::string s) = delete;
+		KeyContext Key(const std::string& s) = delete;
 		Builder& EndDict() = delete;
 		json::Node Build() = delete;
 	};

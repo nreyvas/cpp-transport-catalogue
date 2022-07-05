@@ -34,6 +34,9 @@ namespace transport_catalogue
 		int GetDistance(std::string name_from, std::string name_to) const;
 		std::vector<const Bus*> GetBuses() const;
 		std::vector<const Stop*> GetActiveStops() const;
+		const std::deque<Stop>& GetAllStops() const;
+		const std::deque<Bus>& GetAllBuses() const;
+		const std::vector<std::pair<int,int>> GetBusDistances(const Bus& bus);
 
 	private:
 

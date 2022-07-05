@@ -29,7 +29,7 @@ namespace json
 		return *this;
 	}
 
-	KeyContext Builder::Key(std::string s)
+	KeyContext Builder::Key(const std::string& s)
 	{
 		if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap() && !node_dict_value_)
 		{
@@ -139,7 +139,7 @@ namespace json
 	ItemContext::ItemContext(Builder& b)
 		: builder_ref_(b) {}
 
-	KeyContext ItemContext::Key(std::string s)
+	KeyContext ItemContext::Key(const std::string& s)
 	{
 		return builder_ref_.Key(s);
 	}

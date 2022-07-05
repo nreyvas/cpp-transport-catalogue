@@ -26,8 +26,7 @@ namespace json
 
         using Value = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
 
-        Node(Value v)
-            : value_(std::move(v)) {}
+        Node(Value v);
 
         template <typename T>
         Node(T value)

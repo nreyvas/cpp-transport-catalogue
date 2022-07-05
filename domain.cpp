@@ -18,4 +18,19 @@ namespace transport_catalogue
 	{
 		return hasher_(p.first->name) * 37 + hasher_(p.second->name);
 	}
+
+	Span operator+(const Span& lhs, const Span& rhs)
+	{
+		return { lhs.distance + rhs.distance, {}, {} };
+	}
+
+	bool operator<(const Span& lhs, const Span& rhs)
+	{
+		return lhs.distance < rhs.distance;
+	}
+
+	bool operator>(const Span& lhs, const Span& rhs)
+	{
+		return rhs < lhs;
+	}
 }
