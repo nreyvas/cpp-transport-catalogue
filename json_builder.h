@@ -1,117 +1,122 @@
 #pragma once
-
-
 #include "json.h"
+#include <iostream>
+#include <map>
+#include <string>
+#include <variant>
+#include <vector>
+#include <stdexcept>
+#include <utility>
 
-namespace json
-{
-	class ItemContext;
-	class KeyContext;
-	class KeyValueContext;
-	class ArrayValueContext;
-	class DictItemContext;
-	class ArrayItemContext;
+namespace json {
 
-	class Builder
-	{
-	public:
+using json::Node;
 
-		KeyContext Key(const std::string& s);
-		ItemContext Value(Node::Value v);
-		DictItemContext StartDict();
-		ArrayItemContext StartArray();
-		Builder& EndDict();
-		Builder& EndArray();
+class Builder {
+public:
+    class ChildValueItemContext; // 1
+    class ChildKeyValueItemContext; // 2
+    class ChildDictItemContext; // 3
+    class ChildArrayItemContext; // 4
+    class ChildArrayItemValueContext; // 5
+  
+    ChildValueItemContext Key(std::string key);
+    Builder& Value(Node::Value value);
 
-		Node Build();
+    ChildDictItemContext StartDict();
+    Builder& EndDict();
 
-	private:
-		Node root_;
-		std::vector<Node*> nodes_stack_;
+    ChildArrayItemContext StartArray();
+    Builder& EndArray();
+    Node Build();
 
-		Node* node_dict_value_ = nullptr;
-		bool activated_ = false;
-	};
+private:
+    Node root_;
+    std::vector<Node*> nodes_stack_;
+    bool no_content_ = true;
 
-	class ItemContext
-	{
-	public:
-		ItemContext(Builder& b);
+    std::variant<ChildDictItemContext, ChildArrayItemContext> StartCollection(json::Node node);
 
-		KeyContext Key(const std::string& s);
-		ItemContext Value(Node::Value v);
-		DictItemContext StartDict();
-		ArrayItemContext StartArray();
-		Builder& EndDict();
-		Builder& EndArray();
-		json::Node Build();
+public:
 
-	protected:
-		Builder& builder_ref_;
-	};
+    class CommonContext {
+    public:
+        CommonContext(Builder& builder)
+            : builder_(builder) {}
 
-	class KeyContext : public ItemContext
-	{
-	public:
-		KeyContext(Builder& b);
+        Builder::ChildValueItemContext Key(std::string key);
+        Builder& Value(Node::Value value);
+        Builder::ChildDictItemContext StartDict();
+        Builder& EndDict();
+        Builder::ChildArrayItemContext StartArray();
+        Builder& EndArray();
 
-		KeyValueContext Value(Node::Value v);
+    protected:
+        Builder& builder_;
+    };
 
-		KeyContext Key(const std::string& s) = delete;
-		Builder& EndDict() = delete;
-		Builder& EndArray() = delete;
-		json::Node Build() = delete;
-	};
+// 2
+class ChildKeyValueItemContext final : public CommonContext {
+public:
+    ChildKeyValueItemContext(Builder& builder)
+        : CommonContext(builder) {}
 
-	class KeyValueContext : public ItemContext
-	{
-	public:
-		KeyValueContext(Builder& b);
-		KeyValueContext(ItemContext b);
+    Builder& Value(Node::Value value) = delete;
+    Builder::ChildDictItemContext StartDict() = delete;
+    Builder::ChildArrayItemContext StartArray() = delete;
+    Builder& EndArray() = delete;
 
-		ItemContext Value(Node::Value v) = delete;
-		DictItemContext StartDict() = delete;
-		ArrayItemContext StartArray() = delete;
-		Builder& EndArray() = delete;
-		json::Node Build() = delete;
-	};
+};
 
-	class ArrayValueContext : public ItemContext
-	{
-	public:
-		ArrayValueContext(Builder& b);
-		ArrayValueContext(ItemContext b);
+// 1
+class ChildValueItemContext final : public CommonContext {
+public:
+    ChildValueItemContext(Builder& builder)
+        : CommonContext(builder) {}
 
-		ArrayValueContext Value(Node::Value v);
+    // Вызов Value после Key - попадаешь в контекст №2
+    // Перекрытие имени базового класса
+    ChildKeyValueItemContext Value(Node::Value value);
+    Builder::ChildValueItemContext Key(std::string key) = delete;
+    Builder& EndDict() = delete;
+    Builder& EndArray() = delete;
 
-		KeyContext Key(std::string s) = delete;
-		Builder& EndDict() = delete;
-		json::Node Build() = delete;
-	};
+};
 
-	class DictItemContext : public ItemContext
-	{
-	public:
-		DictItemContext(Builder& b);
+// 3
+class ChildDictItemContext : public CommonContext {
+public:
+    ChildDictItemContext(Builder& builder)
+        : CommonContext(builder) {}
 
-		ItemContext Value(Node::Value v) = delete;
-		DictItemContext StartDict() = delete;
-		ArrayItemContext StartArray() = delete;
-		Builder& EndArray() = delete;
-		json::Node Build() = delete;
-	};
+    Builder& Value(Node::Value value) = delete;
+    Builder::ChildDictItemContext StartDict() = delete;
+    Builder::ChildArrayItemContext StartArray() = delete;
+    Builder& EndArray() = delete;
 
-	class ArrayItemContext : public ItemContext
-	{
-	public:
-		ArrayItemContext(Builder& b);
+};
 
-		ArrayValueContext Value(Node::Value v);
+// 4
+class ChildArrayItemContext : public CommonContext {
+public:
+    ChildArrayItemContext(Builder& builder)
+        : CommonContext(builder) {}
+    ChildArrayItemValueContext Value(Node::Value value);
+    Builder::ChildValueItemContext Key(std::string key) = delete;
+    Builder& EndDict() = delete;
 
-		KeyContext Key(const std::string& s) = delete;
-		Builder& EndDict() = delete;
-		json::Node Build() = delete;
-	};
+};
 
+// 5
+class ChildArrayItemValueContext : public CommonContext {
+public:
+    ChildArrayItemValueContext(Builder& builder)
+        : CommonContext(builder) {}
 
-}
+    ChildValueItemContext Key(std::string key) = delete;
+    ChildArrayItemValueContext Value(Node::Value value);
+    Builder& EndDict() = delete;
+
+};
+};
+} // namespace json

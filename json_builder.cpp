@@ -1,217 +1,187 @@
 #include "json_builder.h"
 
-namespace json
-{
-	using namespace std::string_literals;
+namespace json {
 
-	ItemContext Builder::Value(Node::Value v)
-	{
-		if (nodes_stack_.empty() && !activated_)
-		{
-			root_ = v;
-			activated_ = true;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap() && node_dict_value_)
-		{
-			*node_dict_value_ = v;
-			node_dict_value_ = nullptr;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsArray())
-		{
-			auto& current_const_array = nodes_stack_.back()->AsArray();
-			auto& current_array = const_cast<Array&>(current_const_array);
-			current_array.push_back(Node{ v });
-		}
-		else
-		{
-			throw std::logic_error("Builder::Value error"s);
-		}
-		return *this;
-	}
-
-	KeyContext Builder::Key(const std::string& s)
-	{
-		if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap() && !node_dict_value_)
-		{
-			auto const_dict_node = nodes_stack_.back();
-			auto& dict_node = const_cast<Dict&>(const_dict_node->AsMap());
-			auto pair_ref = dict_node.insert({ s,Node{} });
-			node_dict_value_ = &pair_ref.first->second;
-		}
-		else
-		{
-			throw std::logic_error("Builder::Key error"s);
-		}
-		return *this;
-	}
-
-	DictItemContext Builder::StartDict()
-	{
-		if (nodes_stack_.empty() && !activated_)
-		{
-			root_ = Node{ Dict{} };
-			nodes_stack_.push_back(&root_);
-			activated_ = true;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap() && node_dict_value_)
-		{
-			*node_dict_value_ = Node{ Dict{} };
-			nodes_stack_.push_back(node_dict_value_);
-			node_dict_value_ = nullptr;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsArray())
-		{
-			auto& current_const_array = nodes_stack_.back()->AsArray();
-			auto& current_array = const_cast<Array&>(current_const_array);
-			current_array.push_back(Node{ Dict{} });
-			nodes_stack_.push_back(&current_array.back());
-		}
-		else
-		{
-			throw std::logic_error("Builder::StartDict error"s);
-		}
-		return *this;
-	}
-
-	ArrayItemContext Builder::StartArray()
-	{
-		if (nodes_stack_.empty() && !activated_)
-		{
-			root_ = Node{ Array{} };
-			nodes_stack_.push_back(&root_);
-			activated_ = true;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap() && node_dict_value_)
-		{
-			*node_dict_value_ = Node{ Array{} };
-			nodes_stack_.push_back(node_dict_value_);
-			node_dict_value_ = nullptr;
-		}
-		else if (!nodes_stack_.empty() && nodes_stack_.back()->IsArray())
-		{
-			auto& current_const_array = nodes_stack_.back()->AsArray();
-			auto& current_array = const_cast<Array&>(current_const_array);
-			current_array.push_back(Node{ Array{} });
-			nodes_stack_.push_back(&current_array.back());
-		}
-		else
-		{
-			throw std::logic_error("Builder::StartArray error"s);
-		}
-		return *this;
-	}
-
-	Builder& Builder::EndDict()
-	{
-		if (!nodes_stack_.empty() && nodes_stack_.back()->IsMap())
-		{
-			nodes_stack_.pop_back();
-		}
-		else
-		{
-			throw std::logic_error("Builder::EndDict error"s);
-		}
-		return *this;
-	}
-
-	Builder& Builder::EndArray()
-	{
-		if (!nodes_stack_.empty() && nodes_stack_.back()->IsArray())
-		{
-			nodes_stack_.pop_back();
-		}
-		else
-		{
-			throw std::logic_error("Builder::EndArray error"s);
-		}
-		return *this;
-	}
-
-	Node Builder::Build()
-	{
-		if (!nodes_stack_.empty() || !activated_)
-		{
-			throw std::logic_error("Builder::Build error"s);
-		}
-		return root_;
-	}
-
-	ItemContext::ItemContext(Builder& b)
-		: builder_ref_(b) {}
-
-	KeyContext ItemContext::Key(const std::string& s)
-	{
-		return builder_ref_.Key(s);
-	}
-
-	ItemContext ItemContext::Value(Node::Value v)
-	{
-		return builder_ref_.Value(v);
-	}
-
-	DictItemContext ItemContext::StartDict()
-	{
-		return builder_ref_.StartDict();
-	}
-
-	ArrayItemContext ItemContext::StartArray()
-	{
-		return builder_ref_.StartArray();
-	}
-
-	Builder& ItemContext::EndDict()
-	{
-		return builder_ref_.EndDict();
-	}
-
-	Builder& ItemContext::EndArray()
-	{
-		return builder_ref_.EndArray();
-	}
-
-	json::Node ItemContext::Build()
-	{
-		return builder_ref_.Build();
-	}
-
-
-	KeyContext::KeyContext(Builder& b)
-		: ItemContext(b) {}
-
-	KeyValueContext KeyContext::Value(Node::Value v)
-	{
-		return ItemContext::Value(v);
-	}
-
-
-	KeyValueContext::KeyValueContext(Builder& b)
-		: ItemContext(b) {}
-
-	KeyValueContext::KeyValueContext(ItemContext b)
-		: ItemContext(b) {}
-
-
-	ArrayValueContext::ArrayValueContext(Builder& b)
-		: ItemContext(b) {}
-
-	ArrayValueContext::ArrayValueContext(ItemContext b)
-		: ItemContext(b) {}
-
-	ArrayValueContext ArrayValueContext::Value(Node::Value v)
-	{
-		return ItemContext::Value(v);
-	}
-
-
-	DictItemContext::DictItemContext(Builder& b)
-		: ItemContext(b) {}
-
-
-	ArrayItemContext::ArrayItemContext(Builder& b)
-		: ItemContext(b) {}
-
-	ArrayValueContext ArrayItemContext::Value(Node::Value v)
-	{
-		return ItemContext::Value(v);
-	}
+Builder::ChildValueItemContext Builder::CommonContext::Key(std::string key) {
+    return builder_.Key(key);
 }
+
+Builder& Builder::CommonContext::Value(Node::Value value) {
+    return builder_.Value(value);
+}
+
+Builder::ChildDictItemContext Builder::CommonContext::StartDict() {
+    return builder_.StartDict();
+}
+
+Builder& Builder::CommonContext::EndDict() {
+    return builder_.EndDict();
+}
+
+Builder::ChildArrayItemContext Builder::CommonContext::StartArray() {
+    return builder_.StartArray();
+}
+
+Builder& Builder::CommonContext::EndArray() {
+    return builder_.EndArray();
+}
+
+Builder::ChildKeyValueItemContext Builder::ChildValueItemContext::Value(Node::Value value) {
+    return builder_.Value(value);
+}
+
+Builder::ChildArrayItemValueContext Builder::ChildArrayItemContext::Value(Node::Value value) {
+    return builder_.Value(value);
+}
+
+Builder::ChildArrayItemValueContext Builder::ChildArrayItemValueContext::Value(Node::Value value) {
+    return builder_.Value(value);
+}
+
+Builder::ChildValueItemContext Builder::Key(std::string key) {
+    if(nodes_stack_.empty()) {
+        throw std::logic_error("error");
+    }
+    if(!nodes_stack_.empty() && !nodes_stack_.back()->IsDict()) {
+        // попытка добавления ключа, если словарь не открывался
+        throw std::logic_error("Attempting to add key, but no json::Dict has opened!"); 
+    }
+
+    auto [inserted_iterator, is_inserted] = nodes_stack_.back()->AsDict().emplace(key, json::Node{nullptr});
+
+    // идея в том, что открытый ключ кладет на стек указатель на нулевую ноду
+    // следующий вызов после ключа - это должен быть Value, Dict, Array
+    // если эти вызовы видят на стеке нулевую ноду - они кладут себя тут и закрывают открытую нулевую ноду.
+    nodes_stack_.push_back(&(inserted_iterator->second));
+
+    //debug
+    //json::Print(json::Document(root_), std::cerr);
+
+    return ChildValueItemContext{*this};
+}
+
+Builder& Builder::Value(Node::Value value) {
+    if(!nodes_stack_.empty() && nodes_stack_.back()->IsDict()) {
+        throw std::logic_error("error");
+    }
+    
+    if(!no_content_ && nodes_stack_.empty()) {
+        throw std::logic_error("error");         
+    }
+    
+    Node current_node;
+
+    if(std::holds_alternative<std::nullptr_t>(value)) {
+        current_node = nullptr;
+    } else if(std::holds_alternative<int>(value)) {
+        current_node = std::get<int>(value);
+    } else if(std::holds_alternative<double>(value)) {
+        current_node = std::get<double>(value);
+    } else if(std::holds_alternative<std::string>(value)) {
+        current_node = std::get<std::string>(value);
+    } else if(std::holds_alternative<json::Array>(value)) {
+        current_node = std::get<json::Array>(value);
+    } else if(std::holds_alternative<json::Dict>(value)) {
+        current_node = std::get<json::Dict>(value);
+    } else {
+        throw std::logic_error("error!");
+    }
+
+    if(nodes_stack_.empty()) {
+        // Стек пуст - случай, когда json хранит единичное значение.
+        root_ = std::move(current_node);
+        no_content_ = false;
+    } else if(nodes_stack_.back()->IsNull()) {
+        // случай когда закрываем открытый ключ
+        // это означает, что стек ждет значение для ранее введенного ключа в словаре
+        *nodes_stack_.back() = std::move(current_node);
+        nodes_stack_.pop_back();
+        
+    } else if(nodes_stack_.back()->IsArray()) {
+        // случай когда добавляем в массив (Array)
+        nodes_stack_.back()->AsArray().push_back(std::move(current_node));
+
+    } else {
+        throw std::logic_error("error");
+    }
+    //debug
+    // json::Print(json::Document(root_), std::cerr);
+    return *this;
+}
+
+Builder::ChildDictItemContext Builder::StartDict() {
+    return std::get<Builder::ChildDictItemContext>(StartCollection(json::Node{json::Dict{}}));
+}
+
+Builder::ChildArrayItemContext Builder::StartArray() {
+    return std::get<Builder::ChildArrayItemContext>(StartCollection(json::Node{json::Array{}}));
+}
+
+std::variant<Builder::ChildDictItemContext, Builder::ChildArrayItemContext> Builder::StartCollection(json::Node node) {
+    if(nodes_stack_.empty() && no_content_) {
+        root_ = std::move(node);
+        nodes_stack_.emplace_back(&root_);
+    } else if(!nodes_stack_.empty() && nodes_stack_.back()->IsNull()) {
+        // случай когда закрываем открытый ключ
+        // указатель на нулевую ноду стал указателем на Array
+        // далее открыт массив
+        *nodes_stack_.back() = std::move(node); // тут
+    } else if(!nodes_stack_.empty() && nodes_stack_.back()->IsArray()) {
+        // случай когда добавляем в массив (Array) node типа dict
+        //nodes_stack_.emplace_back()
+        Node inserted_node = nodes_stack_.back()->AsArray().emplace_back(node); // тут
+        //в стек помещается адрес только что вставленного словаря
+        nodes_stack_.push_back(&inserted_node);
+
+    } else {
+        throw std::logic_error("error");
+    }        
+    //debug
+    // json::Print(json::Document(root_), std::cerr);
+    if(node.IsArray()) {
+        return ChildArrayItemContext{*this}; 
+    } else if (node.IsDict()) {
+        return ChildDictItemContext{*this};
+    } else {
+        throw std::logic_error("bad node in return Builder::StartCollection().");
+    }
+}
+
+Builder& Builder::EndDict() {
+    if(!nodes_stack_.empty() && !nodes_stack_.back()->IsDict()) {
+        // попытка добавления ключа, если словарь не открывался
+        throw std::logic_error("error"); 
+    }
+    nodes_stack_.pop_back();
+    no_content_ = false;
+    //debug
+    // json::Print(json::Document(root_), std::cerr);
+    return *this;
+}
+
+Builder& Builder::EndArray(){
+    if(!nodes_stack_.empty() && !nodes_stack_.back()->IsArray()) {
+        // попытка добавления ключа, если словарь не открывался
+        throw std::logic_error("error"); 
+    }
+    nodes_stack_.pop_back();  
+    no_content_ = false; 
+    //debug
+    // json::Print(json::Document(root_), std::cerr);
+    return *this;
+}
+
+Node Builder::Build() {
+    if(!nodes_stack_.empty()) {
+        throw std::logic_error("error");
+    }
+
+    if(no_content_) {
+        throw std::logic_error("error");
+    }        
+    //debug
+    // json::Print(json::Document(root_), std::cerr);
+    return root_;
+}
+
+} // namespace json

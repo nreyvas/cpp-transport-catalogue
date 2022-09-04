@@ -149,7 +149,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="map_renderer.cpp" />
     <ClCompile Include="request_handler.cpp" />
-    <ClCompile Include="stat_reader.cpp" />
     <ClCompile Include="svg.cpp" />
     <ClCompile Include="transport_catalogue.cpp" />
     <ClCompile Include="transport_router.cpp" />
@@ -166,7 +165,6 @@
     <ClInclude Include="ranges.h" />
     <ClInclude Include="request_handler.h" />
     <ClInclude Include="router.h" />
-    <ClInclude Include="stat_reader.h" />
     <ClInclude Include="svg.h" />
     <ClInclude Include="transport_catalogue.h" />
     <ClInclude Include="transport_router.h" />

@@ -1,35 +1,87 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-
+#include "json.h"
 #include "request_handler.h"
 #include "json_reader.h"
+#include "map_renderer.h"
+#include "transport_router.h"
+#include "serialization.h"
 
-using namespace transport_catalogue;
+#include <transport_catalogue.pb.h>
+#include <fstream>
+#include <iostream>
+#include <string_view>
+using namespace std::literals;
 
-int main()
-{
-	
-	TransportCatalogue catalogue;
-	
-	
-	std::string input_json = "D:/CPP/YANDEX/cpp-transport-catalogue/tests/RouteTest03.json";
-	std::ifstream ifs{ input_json };
-	
-	//JsonReader json_reader(ifs, std::cout);
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
+}
 
-	JsonReader json_reader(std::cin, std::cout);
-	json_reader.ProcessRequests();
+int main(int argc, char* argv[]) {
+     if (argc != 2) {
+        PrintUsage();
+        return 1;
+    }
 
-	renderer::MapRenderer renderer = json_reader.GetRenderSettings();
-	RequestHandler request_handler{ catalogue, renderer };
-	request_handler.SetRouterSettings(json_reader.GetRoutingSettings().first,
-									json_reader.GetRoutingSettings().second);
-	ProcessBaseRequests(json_reader.GetBaseRequests(), request_handler);
+    const std::string_view mode(argv[1]);
 
-	json_reader.FillAnswers(
-		ProcessStatRequests(json_reader.GetStatRequests(), request_handler));
+     if (mode == "make_base"sv) {
+        {
+            // make base here
+             json::Document doc = json::Load(std::cin);
 
-	json_reader.OutputAnswers();
+            json_reader::JsonReader reader(doc);
+
+            catalogue::TransportCatalogue cat;
+            catalogue::TransportRouter transport_router(
+                
+                reader.ReadRoutingSettings(doc), 
+                cat);
+            // заполнение справочника и роутера
+            reader.Fill(cat, transport_router);
+            graph::Router<BusRouteWeight> router(transport_router.GetRouteGraph<BusRouteWeight>());
+
+            //renderer::MapRenderer renderer(reader.GetRenderSettings(), cat.GetBusesSorted());
+
+            // ---- serialization moment! ++++
+            Serialize::Serializer serializer_2000(
+                cat,
+                
+                transport_router,
+                reader.GetRenderSettings(),
+                reader.ReadSerializeSettings(doc),
+                router
+            );
+            serializer_2000.Save();
+        }
+
+    } else if (mode == "process_requests"sv) {
+        {
+            // process requests here
+            json::Document doc = json::Load(std::cin);
+
+            json_reader::JsonReader reader(doc);
+
+            Serialize::Deserializer deserializer(reader.ReadSerializeSettings(doc));
+
+            catalogue::TransportCatalogue cat = deserializer.GetTransportCatalogue();
+
+            catalogue::TransportRouter transport_router = deserializer.GetTransportRouter(cat);
+
+            renderer::MapRenderer renderer(
+                deserializer.GetRenderSettings(), 
+                cat.GetBusesSorted());
+
+            graph::Router<BusRouteWeight> router = deserializer.GetRouter(transport_router.GetRouteGraph<BusRouteWeight>());
+
+            RequestHandler handler(cat, renderer, router, transport_router);
+
+            json::Document result = reader.ProcessStatRequests(handler);
+
+
+            json::Print(result, std::cout);
+        }
+
+    } else {
+         PrintUsage();
+         return 1;
+    }
 }
